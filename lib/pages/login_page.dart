@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Tambahkan ini di pubspec.yaml
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'register_page.dart';
 import 'dashboard_page.dart';
 import '../widgets/loading_dialog.dart';
-import '../services/api_service.dart'; // Import service kita
+import '../services/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,7 +18,78 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // Fungsi untuk menangani login ke API
+  // 1. FUNGSI UNTUK MENAMPILKAN MODAL HUBUNGI ADMIN
+  // Sekarang menerima parameter 'phone' dari API
+  void _showContactAdminModal(String status, String phone) {
+    String title = status == 'menunggu' ? "Akun Belum Diverifikasi" : "Akun Ditolak";
+    String description = status == 'menunggu'
+        ? "Akun Anda sedang dalam antrean verifikasi Admin. Silahkan hubungi admin untuk mempercepat proses."
+        : "Mohon maaf, pengajuan akun Anda ditolak oleh Admin. Hubungi admin untuk informasi lebih lanjut.";
+    Color iconColor = status == 'menunggu' ? Colors.orange : Colors.red;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40, 
+                height: 4, 
+                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))
+              ),
+              const SizedBox(height: 25),
+              Icon(status == 'menunggu' ? Icons.timer_outlined : Icons.cancel_outlined, size: 70, color: iconColor),
+              const SizedBox(height: 20),
+              Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Text(description, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+              const SizedBox(height: 30),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  const String message = "Halo Admin, mohon verifikasi akun saya untuk aplikasi E-Lapor PU.";
+                  
+                  // URI dibuat secara dinamis berdasarkan nomor dari parameter 'phone'
+                  final Uri whatsappUrl = Uri(
+                    scheme: 'https',
+                    host: 'wa.me',
+                    path: phone,
+                    queryParameters: {'text': message},
+                  );
+
+                  try {
+                    await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                  } catch (e) {
+                    _showSnackBar("Gagal membuka WhatsApp", Colors.red);
+                  }
+                },
+                icon: const Icon(Icons.chat, color: Colors.white),
+                label: const Text("Hubungi Admin via WhatsApp", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  minimumSize: const Size(double.infinity, 55),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => Navigator.pop(context), 
+                child: const Text("Tutup", style: TextStyle(color: Colors.grey))
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // 2. FUNGSI HANDLE LOGIN
   void _handleLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       _showSnackBar("Email dan Password tidak boleh kosong", Colors.orange);
@@ -36,10 +108,18 @@ class _LoginPageState extends State<LoginPage> {
       LoadingDialog.hide(context);
 
       if (response.statusCode == 200) {
-        // LOGIN BERHASIL
         final userData = response.data['data'];
+        
+        // --- AMBIL STATUS VERIFIKASI & KONTAK ADMIN DARI API ---
+        String statusVerifikasi = userData['verifikasi']; 
+        String adminPhone = userData['admin_contact'] ?? "62838634508345"; // Fallback jika API kosong
 
-        // SIMPAN SESI LOGIN (Shared Preferences)
+        if (statusVerifikasi != 'acc') {
+          _showContactAdminModal(statusVerifikasi, adminPhone);
+          return;
+        }
+
+        // JIKA SUDAH 'acc', SIMPAN SESI
         final prefs = await SharedPreferences.getInstance();
         await prefs.setInt('user_id', userData['id']);
         await prefs.setString('user_name', userData['name']);
@@ -48,25 +128,28 @@ class _LoginPageState extends State<LoginPage> {
 
         _showSnackBar("Selamat Datang, ${userData['name']}!", Colors.green);
 
-        // Pindah ke Dashboard
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const DashboardPage()),
         );
       } else {
-        // LOGIN GAGAL (Email/Password salah)
         String msg = response.data['message'] ?? "Login Gagal";
         _showSnackBar(msg, Colors.red);
       }
     } catch (e) {
       if (mounted) LoadingDialog.hide(context);
-      _showSnackBar("Koneksi gagal ke server. Cek IP Laptop!", Colors.red);
+      _showSnackBar("Koneksi gagal ke server. Periksa jaringan Anda!", Colors.red);
     }
   }
 
   void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: color),
+      SnackBar(
+        content: Text(message), 
+        backgroundColor: color, 
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 
@@ -76,7 +159,7 @@ class _LoginPageState extends State<LoginPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header tetap sama seperti desain kamu
+            // HEADER UI
             Container(
               height: 300,
               width: double.infinity,
@@ -84,18 +167,18 @@ class _LoginPageState extends State<LoginPage> {
                 color: Color(0xFFFFD700),
                 borderRadius: BorderRadius.only(bottomLeft: Radius.circular(80)),
               ),
-              child: Column(
+              child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Pastikan path logo benar
-                  const Image(image: AssetImage("assets/images/logo_pu.png"), height: 100),
-                  const SizedBox(height: 10),
-                  const Text("E-LAPOR PU", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                  const Text("Layanan Aspirasi & Pengaduan Online"),
+                  Image(image: AssetImage("assets/images/logo_pu.png"), height: 100),
+                  SizedBox(height: 10),
+                  Text("E-LAPOR PU", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                  Text("Layanan Aspirasi & Pengaduan Online"),
                 ],
               ),
             ),
 
+            // FORM LOGIN
             Padding(
               padding: const EdgeInsets.all(30),
               child: Column(
@@ -131,7 +214,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: _handleLogin, // Panggil fungsi login API
+                    onPressed: _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFD700),
                       minimumSize: const Size(double.infinity, 55),

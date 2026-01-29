@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
-import '../services/api_service.dart'; // Pastikan path ApiService benar
+import '../services/api_service.dart'; 
+import '../constants/config.dart';
 
 class DetailRiwayatPage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -69,7 +70,7 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
 
   @override
   Widget build(BuildContext context) {
-    const String baseUrl = "http://10.165.144.168:8000/storage/";
+    const String baseUrl = "http://192.168.100.2:8000/storage/";
     Color statusColor = widget.data['status'] == "Selesai" ? Colors.green : Colors.orange;
 
     return Scaffold(
