@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'dart:io';
 
 class ApiService {
-  // GANTI DENGAN IP LAPTOP KAMU (Cek via ipconfig di CMD)
-  static const String baseUrl = "http://192.168.100.2:8000/api";
+  // GANTI DENGAN IP LAPTOP KAMU
+  static const String baseUrl = "http://10.36.254.168:8000/api";
   
   final Dio _dio = Dio(
     BaseOptions(
@@ -16,7 +16,7 @@ class ApiService {
     ),
   );
 
-  // FUNGSI REGISTRASI
+  // FUNGSI REGISTRASI (Tetap)
   Future<Response> register({
     required String nik,
     required String name,
@@ -29,7 +29,6 @@ class ApiService {
     required File fotoKtp,
   }) async {
     try {
-      // Dio menggunakan FormData untuk kirim file + teks
       FormData formData = FormData.fromMap({
         "nik": nik,
         "name": name,
@@ -47,12 +46,11 @@ class ApiService {
 
       return await _dio.post("/register", data: formData);
     } on DioException catch (e) {
-      // Jika terjadi error dari server
       return e.response ?? Response(requestOptions: RequestOptions(), statusCode: 500);
     }
   }
 
-  // FUNGSI LOGIN
+  // FUNGSI LOGIN (Tetap)
   Future<Response> login(String email, String password) async {
     try {
       return await _dio.post("/login", data: {
@@ -64,38 +62,58 @@ class ApiService {
     }
   }
 
+  // FUNGSI CREATE REPORT (Update: Mendukung Multiple Images)
   Future<Response> createReport({
     required int userId,
+    required String jenisUsulan,
     required String kategori,
     required String judul,
     required String lokasi,
     required String deskripsi,
-    required File foto,
-    }) async {
+    required List<File> foto,
+  }) async {
     try {
-        FormData formData = FormData.fromMap({
+      FormData formData = FormData.fromMap({
         "user_id": userId,
+        'jenis_usulan': jenisUsulan,
         "kategori": kategori,
         "judul": judul,
         "lokasi": lokasi,
         "deskripsi": deskripsi,
-        "foto_kerusakan": await MultipartFile.fromFile(
-            foto.path,
-            filename: foto.path.split('/').last,
-        ),
-        });
+      });
 
-        return await _dio.post("/reports", data: formData);
+      // Menambahkan banyak foto ke FormData
+      for (File file in foto) {
+        // PENTING: Cek apakah file benar-benar ada di storage
+        if (await file.exists()) {
+          String fileName = file.path.split('/').last;
+          formData.files.add(MapEntry(
+            "foto_kerusakan[]", // Pastikan pakai [] untuk array di Laravel
+            await MultipartFile.fromFile(
+              file.path,
+              filename: fileName,
+            ),
+          ));
+        } else {
+          print("DEBUG: File tidak ditemukan di path ${file.path}");
+        }
+      }
+
+      return await _dio.post("/reports", data: formData);
     } on DioException catch (e) {
-        return e.response ?? Response(requestOptions: RequestOptions(), statusCode: 500);
+      print("DIO ERROR: ${e.response?.data ?? e.message}");
+      return e.response ?? Response(requestOptions: RequestOptions(), statusCode: 500);
+    } catch (e) {
+      print("GENERAL ERROR: $e");
+      throw Exception("Gagal mengirim data");
     }
   }
 
   Future<Response> getReports(int userId) async {
     try {
-        return await _dio.get("/reports", queryParameters: {"user_id": userId});
+      return await _dio.get("/reports", queryParameters: {"user_id": userId});
     } on DioException catch (e) {
-        return e.response ?? Response(requestOptions: RequestOptions(), statusCode: 500);
+      return e.response ?? Response(requestOptions: RequestOptions(), statusCode: 500);
     }
   }
 
@@ -103,15 +121,15 @@ class ApiService {
     required int reportId,
     required int userId,
     required String pesan,
-    }) async {
+  }) async {
     try {
-        return await _dio.post("/comments", data: {
+      return await _dio.post("/comments", data: {
         "report_id": reportId,
         "user_id": userId,
         "pesan": pesan,
-        });
+      });
     } on DioException catch (e) {
-        return e.response ?? Response(requestOptions: RequestOptions(), statusCode: 500);
+      return e.response ?? Response(requestOptions: RequestOptions(), statusCode: 500);
     }
- }
+  }
 }

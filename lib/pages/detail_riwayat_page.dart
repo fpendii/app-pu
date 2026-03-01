@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:dio/dio.dart';
-import '../services/api_service.dart'; 
-import '../constants/config.dart';
+import '../services/api_service.dart';
 
 class DetailRiwayatPage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -16,30 +13,36 @@ class DetailRiwayatPage extends StatefulWidget {
 class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
   final TextEditingController _commentController = TextEditingController();
   final ApiService _apiService = ApiService();
-  
-  late List<dynamic> _comments;
+
+  List<dynamic> _comments = [];
+  List<dynamic> _reportImages = [];
   bool _isLoading = false;
+
+  // List Status yang sama dengan versi Web Admin
+  final List<Map<String, String>> _statusSteps = [
+    {'key': 'Proposal Susulan', 'label': 'Proposal'},
+    {'key': 'Cek Lokasi', 'label': 'Verifikasi'},
+    {'key': 'Penetapan Pekerjaan', 'label': 'Penetapan'},
+    {'key': 'Pelaksanaan', 'label': 'Pelaksanaan'},
+    {'key': 'Pemeriksaan', 'label': 'Pemeriksaan'},
+    {'key': 'Selesai', 'label': 'Selesai'},
+  ];
 
   @override
   void initState() {
     super.initState();
-    // Inisialisasi daftar komentar dari data yang dikirim lewat constructor
     _comments = widget.data['comments'] ?? [];
+    _reportImages = widget.data['images'] ?? [];
   }
 
-  // Fungsi untuk mengirim komentar
   Future<void> _sendComment() async {
     if (_commentController.text.trim().isEmpty) return;
-
     setState(() => _isLoading = true);
 
     try {
-      // Ambil report_id dari data laporan
       int reportId = widget.data['id'];
-      // Ambil user_id pelapor (dari data laporan)
-      int userId = widget.data['user_id']; 
+      int userId = widget.data['user_id'];
 
-      // Panggil ApiService (Pastikan sudah buat fungsi postComment di ApiService)
       final response = await _apiService.postComment(
         reportId: reportId,
         userId: userId,
@@ -48,16 +51,12 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         setState(() {
-          // Tambahkan komentar baru yang dikembalikan dari server ke daftar
           _comments.add(response.data['data']);
-          _commentController.clear(); // Bersihkan input
+          _commentController.clear();
         });
-        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Komentar terkirim!")),
         );
-      } else {
-        throw Exception("Gagal mengirim komentar");
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -70,86 +69,258 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
 
   @override
   Widget build(BuildContext context) {
-    const String baseUrl = "http://192.168.100.2:8000/storage/";
-    Color statusColor = widget.data['status'] == "Selesai" ? Colors.green : Colors.orange;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Detail Laporan"),
+        title: const Text("Detail Laporan", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFFFFD700),
         foregroundColor: Colors.black,
+        elevation: 0,
       ),
       body: Column(
         children: [
-          // Area Konten Utama (Scrollable)
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- Foto Utama ---
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: Image.network(
-                      "$baseUrl${widget.data['foto_kerusakan']}",
-                      height: 230, width: double.infinity, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(height: 230, color: Colors.grey[300], child: const Icon(Icons.broken_image)),
+                  // --- STEPPER PROGRESS (BARU) ---
+                  _buildProgressStepper(),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Slider Foto
+                        _buildImageSlider(),
+                        const SizedBox(height: 20),
+
+                        // Box Analisis AI
+                        if (widget.data['ai_analysis'] != null) _buildAISection(),
+                        const SizedBox(height: 15),
+
+                        Text(
+                          widget.data['judul'] ?? "Tanpa Judul",
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        
+                        _buildStatusBadge(),
+                        
+                        const Divider(height: 40),
+
+                        _buildInfoRow(Icons.location_on, "Lokasi Kejadian", widget.data['lokasi'] ?? "-"),
+                        _buildInfoRow(Icons.category, "Kategori Kerusakan", widget.data['kategori'] ?? "-"),
+                        _buildInfoRow(Icons.description, "Deskripsi Lengkap", widget.data['deskripsi'] ?? "-"),
+
+                        const Divider(height: 40),
+
+                        const Text("Tanggapan & Riwayat Progress", 
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                        ),
+                        const SizedBox(height: 15),
+                        _buildCommentList(),
+                        const SizedBox(height: 30),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-
-                  // --- Status & Judul ---
-                  _buildStatusBadge(statusColor),
-                  const SizedBox(height: 15),
-                  Text(widget.data['judul'] ?? "Tanpa Judul", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  const Divider(height: 40),
-
-                  // --- Info Detail ---
-                  _buildInfoRow(Icons.location_on, "Lokasi", widget.data['lokasi'] ?? "-"),
-                  _buildInfoRow(Icons.category, "Kategori", widget.data['kategori'] ?? "-"),
-                  _buildInfoRow(Icons.description, "Deskripsi", widget.data['deskripsi'] ?? "-"),
-                  
-                  const Divider(height: 40),
-
-                  // --- Daftar Komentar/Progress ---
-                  const Text("Tanggapan & Progress", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 15),
-                  _buildCommentList(baseUrl),
                 ],
               ),
             ),
           ),
+          _buildCommentInput(),
+        ],
+      ),
+    );
+  }
 
-          // --- Input Box Komentar (Tetap di bawah) ---
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
-            ),
+  // --- WIDGET STEPPER PROGRESS ---
+  Widget _buildProgressStepper() {
+    String currentStatus = widget.data['status'] ?? '';
+    
+    // Mencari index status saat ini
+    int currentIndex = _statusSteps.indexWhere((element) => element['key'] == currentStatus);
+    // Jika status tidak ditemukan (misal: 'Ditolak'), kita set ke -1 atau handle khusus
+    if (currentIndex == -1 && currentStatus.contains('Ditolak')) currentIndex = 0;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+        ],
+      ),
+      child: Column(
+        children: [
+          const Text("ALUR PENGERJAAN", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2)),
+          const SizedBox(height: 15),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _commentController,
-                    decoration: InputDecoration(
-                      hintText: "Tulis komentar...",
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(_statusSteps.length, (index) {
+                bool isCompleted = index < currentIndex;
+                bool isActive = index == currentIndex;
+                bool isLast = index == _statusSteps.length - 1;
+
+                Color color = isCompleted ? Colors.green : (isActive ? Colors.blue : Colors.grey.shade300);
+
+                return Row(
+                  children: [
+                    // Circle & Label
+                    Column(
+                      children: [
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: isActive ? [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 8)] : [],
+                          ),
+                          child: Center(
+                            child: isCompleted 
+                              ? const Icon(Icons.check, color: Colors.white, size: 16)
+                              : Text("${index + 1}", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _statusSteps[index]['label']!,
+                          style: TextStyle(
+                            fontSize: 9, 
+                            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                            color: isActive ? Colors.blue : (isCompleted ? Colors.green : Colors.grey),
+                          ),
+                        ),
+                      ],
                     ),
+                    // Line Connector
+                    if (!isLast)
+                      Container(
+                        width: 35,
+                        height: 2,
+                        margin: const EdgeInsets.only(bottom: 15),
+                        color: isCompleted ? Colors.green : Colors.grey.shade300,
+                      ),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- WIDGET HELPER LAINNYA ---
+
+  Widget _buildStatusBadge() {
+    String status = widget.data['status'] ?? "Proses";
+    Color color = (status == "Selesai") ? Colors.green : (status.contains("Ditolak") ? Colors.red : Colors.orange);
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color),
+      ),
+      child: Text(status.toUpperCase(), style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+    );
+  }
+
+  Widget _buildImageSlider() {
+    if (_reportImages.isEmpty) {
+      return Container(
+        height: 200,
+        margin: const EdgeInsets.only(top: 20),
+        width: double.infinity,
+        decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(15)),
+        child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+      );
+    }
+    return Column(
+      children: [
+        const SizedBox(height: 20),
+        SizedBox(
+          height: 230,
+          child: PageView.builder(
+            itemCount: _reportImages.length,
+            itemBuilder: (context, index) {
+              String imageUrl = _reportImages[index]['full_url'] ?? "";
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  child: Image.network(imageUrl, fit: BoxFit.cover, width: double.infinity,
+                    errorBuilder: (_, __, ___) => Container(color: Colors.grey[300], child: const Icon(Icons.broken_image)),
                   ),
                 ),
-                const SizedBox(width: 10),
-                _isLoading 
-                  ? const CircularProgressIndicator()
-                  : CircleAvatar(
-                      backgroundColor: const Color(0xFFFFD700),
-                      child: IconButton(
-                        icon: const Icon(Icons.send, color: Colors.black),
-                        onPressed: _sendComment,
-                      ),
-                    ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text("Geser untuk melihat ${_reportImages.length} foto", style: const TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic)),
+      ],
+    );
+  }
+
+  Widget _buildAISection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome, color: Colors.blue, size: 20),
+              const SizedBox(width: 8),
+              const Text("Analisis AI Gemini", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+              const Spacer(),
+              _buildSeverityChip(widget.data['ai_severity']),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(widget.data['ai_analysis'] ?? "", style: const TextStyle(fontSize: 14, height: 1.5)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSeverityChip(String? severity) {
+    Color color = (severity?.toLowerCase() == 'berat') ? Colors.red : (severity?.toLowerCase() == 'sedang' ? Colors.orange : Colors.green);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
+      child: Text(severity?.toUpperCase() ?? "OK", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: const Color(0xFFFFD700), size: 22),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
@@ -158,37 +329,9 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
     );
   }
 
-  // Widget Badge Status
-  Widget _buildStatusBadge(Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color),
-      ),
-      child: Text(widget.data['status'].toString().toUpperCase(), style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
-    );
-  }
-
-  // Widget Baris Info
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFFFFD700), size: 20),
-          const SizedBox(width: 15),
-          Expanded(child: Text("$label: $value", style: const TextStyle(fontSize: 14))),
-        ],
-      ),
-    );
-  }
-
-  // Widget List Komentar
-  Widget _buildCommentList(String baseUrl) {
+  Widget _buildCommentList() {
     if (_comments.isEmpty) {
-      return const Text("Belum ada tanggapan.", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey));
+      return const Center(child: Text("Belum ada tanggapan resmi.", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)));
     }
     return ListView.builder(
       shrinkWrap: true,
@@ -196,32 +339,66 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
       itemCount: _comments.length,
       itemBuilder: (context, index) {
         final c = _comments[index];
+        bool isAdmin = c['user']?['role'] == 'admin'; // Opsional jika ada pembedaan role
+
         return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.shade200),
+            color: isAdmin ? Colors.blue.shade50 : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isAdmin ? Colors.blue.shade100 : Colors.grey.shade200),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(c['user']?['name'] ?? "User", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 13)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(c['user']?['name'] ?? "User", style: TextStyle(fontWeight: FontWeight.bold, color: isAdmin ? Colors.blue : Colors.black87)),
+                  if (isAdmin) const Icon(Icons.verified, color: Colors.blue, size: 16),
+                ],
+              ),
               const SizedBox(height: 5),
-              Text(c['pesan'] ?? ""),
-              if (c['foto_progress'] != null) 
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network("$baseUrl${c['foto_progress']}", height: 150, width: double.infinity, fit: BoxFit.cover),
-                  ),
-                ),
+              Text(c['pesan'] ?? "", style: const TextStyle(fontSize: 14)),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildCommentInput() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(15, 10, 15, 30),
+      decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))]),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _commentController,
+              decoration: InputDecoration(
+                hintText: "Tulis pesan/pertanyaan...",
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          _isLoading 
+            ? const SizedBox(width: 30, height: 30, child: CircularProgressIndicator(strokeWidth: 2))
+            : CircleAvatar(
+                backgroundColor: const Color(0xFFFFD700),
+                radius: 24,
+                child: IconButton(
+                  icon: const Icon(Icons.send, color: Colors.black, size: 20),
+                  onPressed: _sendComment,
+                ),
+              ),
+        ],
+      ),
     );
   }
 }
