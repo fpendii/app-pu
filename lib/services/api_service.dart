@@ -3,16 +3,14 @@ import 'dart:io';
 
 class ApiService {
   // GANTI DENGAN IP LAPTOP KAMU
-  static const String baseUrl = "http://10.36.254.168:8000/api";
-  
+  static const String baseUrl = "http://10.143.145.1:8000/api";
+
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
-      headers: {
-        "Accept": "application/json",
-      },
+      headers: {"Accept": "application/json"},
     ),
   );
 
@@ -46,19 +44,21 @@ class ApiService {
 
       return await _dio.post("/register", data: formData);
     } on DioException catch (e) {
-      return e.response ?? Response(requestOptions: RequestOptions(), statusCode: 500);
+      return e.response ??
+          Response(requestOptions: RequestOptions(), statusCode: 500);
     }
   }
 
   // FUNGSI LOGIN (Tetap)
   Future<Response> login(String email, String password) async {
     try {
-      return await _dio.post("/login", data: {
-        "email": email,
-        "password": password,
-      });
+      return await _dio.post(
+        "/login",
+        data: {"email": email, "password": password},
+      );
     } on DioException catch (e) {
-      return e.response ?? Response(requestOptions: RequestOptions(), statusCode: 500);
+      return e.response ??
+          Response(requestOptions: RequestOptions(), statusCode: 500);
     }
   }
 
@@ -87,13 +87,12 @@ class ApiService {
         // PENTING: Cek apakah file benar-benar ada di storage
         if (await file.exists()) {
           String fileName = file.path.split('/').last;
-          formData.files.add(MapEntry(
-            "foto_kerusakan[]", // Pastikan pakai [] untuk array di Laravel
-            await MultipartFile.fromFile(
-              file.path,
-              filename: fileName,
+          formData.files.add(
+            MapEntry(
+              "foto_kerusakan[]", // Pastikan pakai [] untuk array di Laravel
+              await MultipartFile.fromFile(file.path, filename: fileName),
             ),
-          ));
+          );
         } else {
           print("DEBUG: File tidak ditemukan di path ${file.path}");
         }
@@ -102,7 +101,8 @@ class ApiService {
       return await _dio.post("/reports", data: formData);
     } on DioException catch (e) {
       print("DIO ERROR: ${e.response?.data ?? e.message}");
-      return e.response ?? Response(requestOptions: RequestOptions(), statusCode: 500);
+      return e.response ??
+          Response(requestOptions: RequestOptions(), statusCode: 500);
     } catch (e) {
       print("GENERAL ERROR: $e");
       throw Exception("Gagal mengirim data");
@@ -113,7 +113,8 @@ class ApiService {
     try {
       return await _dio.get("/reports", queryParameters: {"user_id": userId});
     } on DioException catch (e) {
-      return e.response ?? Response(requestOptions: RequestOptions(), statusCode: 500);
+      return e.response ??
+          Response(requestOptions: RequestOptions(), statusCode: 500);
     }
   }
 
@@ -123,13 +124,32 @@ class ApiService {
     required String pesan,
   }) async {
     try {
-      return await _dio.post("/comments", data: {
-        "report_id": reportId,
-        "user_id": userId,
-        "pesan": pesan,
-      });
+      return await _dio.post(
+        "/comments",
+        data: {"report_id": reportId, "user_id": userId, "pesan": pesan},
+      );
     } on DioException catch (e) {
-      return e.response ?? Response(requestOptions: RequestOptions(), statusCode: 500);
+      return e.response ??
+          Response(requestOptions: RequestOptions(), statusCode: 500);
+    }
+  }
+
+  // Tambahkan ini di dalam class ApiService
+  Future<Response> getDashboardStats() async {
+    try {
+      return await _dio.get("/dashboard-stats");
+    } on DioException catch (e) {
+      return e.response ??
+          Response(requestOptions: RequestOptions(), statusCode: 500);
+    }
+  }
+
+  Future<Response> getUserProfile(int userId) async {
+    try {
+      return await _dio.get("/user-profile/$userId");
+    } on DioException catch (e) {
+      return e.response ??
+          Response(requestOptions: RequestOptions(), statusCode: 500);
     }
   }
 }
