@@ -13,22 +13,21 @@ class FormLaporPage extends StatefulWidget {
 }
 
 class _FormLaporPageState extends State<FormLaporPage> {
-  // Variabel untuk menampung banyak foto
+  // --- VARIABEL & CONTROLLER ---
   final List<File> _images = [];
   final _picker = ImagePicker();
 
-  // Controller
   final _judulController = TextEditingController();
   final _lokasiController = TextEditingController();
   final _deskripsiController = TextEditingController();
   final _kategoriLainnyaController = TextEditingController();
 
-  // Variabel untuk Dropdown
-  String? _selectedJenisUsulan; // <--- Variabel Baru
+  String? _selectedJenisUsulan;
+  String? _selectedPrioritas;
   String? _selectedParent;
   String? _selectedSub;
 
-  // Data Jenis Usulan
+  // --- DATA MASTER ---
   final List<String> _jenisUsulanData = [
     'Proposal Kepala Desa',
     'Proposal Kelompok Tani/P3A',
@@ -37,7 +36,8 @@ class _FormLaporPageState extends State<FormLaporPage> {
     'Laporan Masyarakat',
   ];
 
-  // Struktur Data Kategori
+  final List<String> _prioritasData = ['Rendah', 'Sedang', 'Tinggi', 'Darurat'];
+
   final Map<String, List<String>> _kategoriData = {
     'Irigasi Permukaan': [
       'Bangunan Utama/Bendung',
@@ -45,20 +45,20 @@ class _FormLaporPageState extends State<FormLaporPage> {
       'Saluran Sekunder',
       'Bangunan Pembagi',
       'Bangunan Pelengkap',
-      'Saluran dan Bangunan Pembuang'
+      'Saluran dan Bangunan Pembuang',
     ],
     'Irigasi Rawa': [
       'Saluran Primer',
       'Saluran Sekunder',
       'Pintu Air',
       'Bangunan Pelengkap',
-      'Saluran dan Bangunan Pembuang'
+      'Saluran dan Bangunan Pembuang',
     ],
     'Sungai': [
       'Tanggul',
       'Badan Sungai',
       'Bangunan Pengendali Banjir',
-      'Drainase Makro'
+      'Drainase Makro',
     ],
     'Pantai': [
       'Breakwater',
@@ -67,12 +67,26 @@ class _FormLaporPageState extends State<FormLaporPage> {
       'Groins',
       'Jetty',
       'Beach Norishment',
-      'Terumbu Buatan'
+      'Terumbu Buatan',
     ],
-    'Lainnya': []
+    'Lainnya': [],
   };
 
-  // --- FUNGSI PILIH SUMBER FOTO ---
+  // --- HELPER UI ---
+  Color _getPriorityColor(String priority) {
+    switch (priority) {
+      case 'Darurat':
+        return Colors.red;
+      case 'Tinggi':
+        return Colors.orange;
+      case 'Sedang':
+        return Colors.blue;
+      default:
+        return Colors.green;
+    }
+  }
+
+  // --- FUNGSI PICKER FOTO ---
   void _showPickerOptions() {
     showModalBottomSheet(
       context: context,
@@ -83,7 +97,10 @@ class _FormLaporPageState extends State<FormLaporPage> {
         child: Wrap(
           children: [
             const ListTile(
-              title: Text("Pilih Sumber Foto", style: TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(
+                "Pilih Sumber Foto",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library, color: Colors.blue),
@@ -110,19 +127,21 @@ class _FormLaporPageState extends State<FormLaporPage> {
   Future<void> _pickImage(ImageSource source) async {
     try {
       if (source == ImageSource.gallery) {
-        final List<XFile> pickedFiles = await _picker.pickMultiImage(imageQuality: 25);
+        final List<XFile> pickedFiles = await _picker.pickMultiImage(
+          imageQuality: 25,
+        );
         if (pickedFiles.isNotEmpty) {
           for (var xFile in pickedFiles) {
-            final file = File(xFile.path);
-            if (await file.exists()) {
-              setState(() {
-                if (_images.length < 5) _images.add(file);
-              });
+            if (_images.length < 5) {
+              setState(() => _images.add(File(xFile.path)));
             }
           }
         }
       } else {
-        final XFile? pickedFile = await _picker.pickImage(source: source, imageQuality: 25);
+        final XFile? pickedFile = await _picker.pickImage(
+          source: source,
+          imageQuality: 25,
+        );
         if (pickedFile != null) {
           setState(() {
             if (_images.length < 5) _images.add(File(pickedFile.path));
@@ -134,10 +153,6 @@ class _FormLaporPageState extends State<FormLaporPage> {
     }
   }
 
-  void _removeImage(int index) {
-    setState(() => _images.removeAt(index));
-  }
-
   // --- FUNGSI KIRIM ---
   void _handleKirimLaporan() async {
     String finalKategori = "";
@@ -147,14 +162,18 @@ class _FormLaporPageState extends State<FormLaporPage> {
       finalKategori = "${_selectedParent} - ${_selectedSub}";
     }
 
-    // Validasi Field (Termasuk Jenis Usulan)
+    // Validasi Semua Field
     if (_images.isEmpty ||
         _selectedJenisUsulan == null ||
-        _judulController.text.isEmpty ||
+        _selectedPrioritas == null ||
         _selectedParent == null ||
         (_selectedParent != 'Lainnya' && _selectedSub == null) ||
+        _judulController.text.isEmpty ||
         _lokasiController.text.isEmpty) {
-      _showSnackBar("Harap lengkapi Foto, Jenis Usulan, Kategori, Judul, dan Lokasi!", Colors.orange);
+      _showSnackBar(
+        "Harap lengkapi semua data dan lampirkan foto!",
+        Colors.orange,
+      );
       return;
     }
 
@@ -166,7 +185,8 @@ class _FormLaporPageState extends State<FormLaporPage> {
 
       final response = await ApiService().createReport(
         userId: userId,
-        jenisUsulan: _selectedJenisUsulan!, // <--- Data baru dikirim ke API
+        jenisUsulan: _selectedJenisUsulan!,
+        prioritas: _selectedPrioritas!,
         kategori: finalKategori,
         judul: _judulController.text,
         lokasi: _lokasiController.text,
@@ -180,7 +200,7 @@ class _FormLaporPageState extends State<FormLaporPage> {
       if (response.statusCode == 201 || response.statusCode == 200) {
         _showSnackBar("Laporan berhasil terkirim!", Colors.green);
         Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) Navigator.of(context).pop();
+          if (mounted) Navigator.pop(context);
         });
       } else {
         _showSnackBar("Gagal: ${response.data['message']}", Colors.red);
@@ -194,17 +214,19 @@ class _FormLaporPageState extends State<FormLaporPage> {
   }
 
   void _showSnackBar(String message, Color color) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: color, duration: const Duration(milliseconds: 1500))
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Buat Laporan Aduan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text(
+          "Buat Laporan Aduan",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         backgroundColor: const Color(0xFFFFD700),
         foregroundColor: Colors.black,
         elevation: 0,
@@ -214,160 +236,249 @@ class _FormLaporPageState extends State<FormLaporPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Foto Kerusakan (Maks 5)", style: TextStyle(fontWeight: FontWeight.bold)),
+            // --- AREA FOTO ---
+            const Text(
+              "Foto Kerusakan (Maks 5)",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
-
-            // AREA PREVIEW MULTIPLE IMAGES
             SizedBox(
-              height: 120,
+              height: 110,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: _images.length + 1,
                 itemBuilder: (context, index) {
                   if (index == _images.length) {
-                    return GestureDetector(
-                      onTap: _showPickerOptions,
-                      child: Container(
-                        width: 100,
-                        margin: const EdgeInsets.only(right: 10, top: 5, bottom: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(color: const Color(0xFFFFD700), width: 2),
-                        ),
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_a_photo, color: Color(0xFFFFD700), size: 30),
-                            Text("Tambah", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ),
-                    );
+                    return _buildAddPhotoButton();
                   }
-
-                  return Stack(
-                    children: [
-                      Container(
-                        width: 100,
-                        margin: const EdgeInsets.only(right: 10, top: 5, bottom: 5),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          image: DecorationImage(
-                            image: FileImage(_images[index]),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: 0, top: 0,
-                        child: GestureDetector(
-                          onTap: () => _removeImage(index),
-                          child: Container(
-                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                            child: const Icon(Icons.close, color: Colors.white, size: 20),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
+                  return _buildImagePreview(index);
                 },
               ),
             ),
 
             const SizedBox(height: 25),
 
-            // --- INPUT BARU: JENIS USULAN ---
-            const Text("Jenis Usulan", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
+            // --- JENIS USULAN ---
+            _buildLabel("Jenis Usulan"),
+            _buildDropdown(
               value: _selectedJenisUsulan,
-              hint: const Text("Pilih Jenis Usulan"),
-              isExpanded: true,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.white,
-                prefixIcon: Icon(Icons.assignment, color: Colors.blueGrey),
-              ),
-              items: _jenisUsulanData.map((String value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
-              onChanged: (newValue) => setState(() => _selectedJenisUsulan = newValue),
+              hint: "Pilih Jenis Usulan",
+              icon: Icons.assignment_outlined,
+              items: _jenisUsulanData,
+              onChanged: (v) => setState(() => _selectedJenisUsulan = v),
             ),
 
             const SizedBox(height: 20),
 
-            // --- KATEGORI UTAMA ---
-            const Text("Kategori Utama", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
+            // --- PRIORITAS ---
+            _buildLabel("Skala Prioritas"),
             DropdownButtonFormField<String>(
-              value: _selectedParent,
-              hint: const Text("Pilih Kategori Utama"),
-              isExpanded: true,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(), 
-                filled: true, 
-                fillColor: Colors.white,
-                prefixIcon: Icon(Icons.category, color: Colors.blueGrey),
+              value: _selectedPrioritas,
+              hint: const Text("Tingkat Urgensi"),
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                prefixIcon: Icon(
+                  Icons.priority_high_rounded,
+                  color: _selectedPrioritas == null
+                      ? Colors.grey
+                      : _getPriorityColor(_selectedPrioritas!),
+                ),
               ),
-              items: _kategoriData.keys.map((String value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
-              onChanged: (newValue) => setState(() { _selectedParent = newValue; _selectedSub = null; }),
+              items: _prioritasData
+                  .map(
+                    (e) => DropdownMenuItem(
+                      value: e,
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 6,
+                            backgroundColor: _getPriorityColor(e),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(e),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) => setState(() => _selectedPrioritas = v),
             ),
 
-            // --- SUB KATEGORI ---
+            const SizedBox(height: 20),
+
+            // --- KATEGORI ---
+            _buildLabel("Kategori Utama"),
+            _buildDropdown(
+              value: _selectedParent,
+              hint: "Pilih Kategori",
+              icon: Icons.category_outlined,
+              items: _kategoriData.keys.toList(),
+              onChanged: (v) => setState(() {
+                _selectedParent = v;
+                _selectedSub = null;
+              }),
+            ),
+
             if (_selectedParent != null && _selectedParent != 'Lainnya') ...[
               const SizedBox(height: 20),
-              Text("Detail Bagian ($_selectedParent)", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
+              _buildLabel("Detail Bagian ($_selectedParent)"),
+              _buildDropdown(
                 value: _selectedSub,
-                hint: const Text("Pilih Detail Bagian/Bangunan"),
-                isExpanded: true,
-                decoration: const InputDecoration(border: OutlineInputBorder(), filled: true, fillColor: Colors.white),
-                items: _kategoriData[_selectedParent]!.map((String value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
-                onChanged: (newValue) => setState(() => _selectedSub = newValue),
+                hint: "Pilih Detail Bagian",
+                icon: Icons.account_tree_outlined,
+                items: _kategoriData[_selectedParent]!,
+                onChanged: (v) => setState(() => _selectedSub = v),
               ),
             ],
 
-            // --- INPUT LAINNYA ---
             if (_selectedParent == 'Lainnya') ...[
               const SizedBox(height: 20),
-              TextField(
-                controller: _kategoriLainnyaController,
-                decoration: const InputDecoration(labelText: "Sebutkan Kategori", border: OutlineInputBorder(), prefixIcon: Icon(Icons.edit_note)),
+              _buildLabel("Sebutkan Kategori"),
+              _buildTextField(
+                _kategoriLainnyaController,
+                "Ketik kategori di sini...",
+                icon: Icons.edit_note,
               ),
             ],
 
             const SizedBox(height: 20),
-            const Text("Judul Laporan", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            TextField(controller: _judulController, decoration: const InputDecoration(hintText: "Contoh: Pintu Air Berkarat", border: OutlineInputBorder())),
+
+            // --- JUDUL & LOKASI ---
+            _buildLabel("Judul Laporan"),
+            _buildTextField(_judulController, "Contoh: Kerusakan Bendung A"),
 
             const SizedBox(height: 20),
-            const Text("Lokasi / Alamat Kejadian", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            TextField(controller: _lokasiController, decoration: const InputDecoration(hintText: "Nama lokasi atau patokan", prefixIcon: Icon(Icons.location_on, color: Colors.red), border: OutlineInputBorder())),
+            _buildLabel("Lokasi / Alamat"),
+            _buildTextField(
+              _lokasiController,
+              "Lokasi kejadian",
+              icon: Icons.location_on_outlined,
+            ),
 
             const SizedBox(height: 20),
-            const Text("Deskripsi Tambahan (Opsional)", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            TextField(controller: _deskripsiController, maxLines: 3, decoration: const InputDecoration(hintText: "Jelaskan detail kerusakan di sini...", border: OutlineInputBorder())),
-            
-            const SizedBox(height: 35),
+            _buildLabel("Deskripsi Tambahan (Opsional)"),
+            _buildTextField(
+              _deskripsiController,
+              "Detail tambahan...",
+              maxLines: 3,
+            ),
+
+            const SizedBox(height: 40),
 
             // --- TOMBOL KIRIM ---
             ElevatedButton(
               onPressed: _handleKirimLaporan,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFD700),
-                minimumSize: const Size(double.infinity, 55),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                minimumSize: const Size(double.infinity, 60),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text("KIRIM LAPORAN SEKARANG", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 16)),
+              child: const Text(
+                "KIRIM LAPORAN SEKARANG",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                  fontSize: 16,
+                ),
+              ),
             ),
-            const SizedBox(height: 40), 
+            const SizedBox(height: 50),
           ],
         ),
       ),
     );
   }
+
+  // --- REUSABLE COMPONENTS ---
+  Widget _buildLabel(String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
+  );
+
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hint, {
+    IconData? icon,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: icon != null ? Icon(icon) : null,
+        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String? value,
+    required String hint,
+    required IconData icon,
+    required List<String> items,
+    required Function(String?) onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      hint: Text(hint),
+      isExpanded: true,
+      decoration: InputDecoration(
+        border: const OutlineInputBorder(),
+        prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+      items: items
+          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildAddPhotoButton() => GestureDetector(
+    onTap: _showPickerOptions,
+    child: Container(
+      width: 100,
+      margin: const EdgeInsets.only(right: 10, top: 5, bottom: 5),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: const Color(0xFFFFD700), width: 2),
+      ),
+      child: const Icon(Icons.add_a_photo, color: Color(0xFFFFD700)),
+    ),
+  );
+
+  Widget _buildImagePreview(int index) => Stack(
+    children: [
+      Container(
+        width: 100,
+        margin: const EdgeInsets.only(right: 10, top: 5, bottom: 5),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          image: DecorationImage(
+            image: FileImage(_images[index]),
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
+      Positioned(
+        top: 0,
+        right: 5,
+        child: GestureDetector(
+          onTap: () => setState(() => _images.removeAt(index)),
+          child: const CircleAvatar(
+            radius: 12,
+            backgroundColor: Colors.red,
+            child: Icon(Icons.close, size: 16, color: Colors.white),
+          ),
+        ),
+      ),
+    ],
+  );
 }

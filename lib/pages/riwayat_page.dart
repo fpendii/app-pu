@@ -44,22 +44,59 @@ class _RiwayatPageState extends State<RiwayatPage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
+        backgroundColor: const Color(
+          0xFFF8F9FA,
+        ), // Warna background aplikasi yang lebih soft
         appBar: AppBar(
-          title: const Text("Riwayat Aduan"),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: "Semua"),
-              Tab(text: "Proses"),
-              Tab(text: "Selesai"),
-            ],
-            indicatorColor: Colors.black,
-            labelColor: Colors.black,
+          title: const Text(
+            "Riwayat Aduan",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
           ),
+          backgroundColor: const Color(0xFFFFD700),
+          elevation: 0,
+          centerTitle: true,
           actions: [
-            IconButton(onPressed: _fetchData, icon: const Icon(Icons.refresh)),
+            IconButton(
+              onPressed: _fetchData,
+              icon: const Icon(Icons.refresh_rounded, color: Colors.black),
+            ),
           ],
+          // --- PENYUSUNAN TAB BAR YANG LEBIH RAPI ---
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(50),
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(color: Color(0xFFFFD700)),
+              child: TabBar(
+                isScrollable: true,
+                physics: const BouncingScrollPhysics(),
+                labelColor: Colors.black,
+                unselectedLabelColor: Colors.black.withOpacity(0.5),
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.normal,
+                  fontSize: 14,
+                ),
+                indicatorSize: TabBarIndicatorSize.label,
+                // Indikator garis hitam yang lebih tebal dan membulat
+                indicator: const UnderlineTabIndicator(
+                  borderSide: BorderSide(width: 4, color: Colors.black),
+                  insets: EdgeInsets.symmetric(horizontal: 16),
+                ),
+                tabs: const [
+                  Tab(text: "Semua"),
+                  Tab(text: "Proposal"),
+                  Tab(text: "Proses"),
+                  Tab(text: "Selesai"),
+                ],
+              ),
+            ),
+          ),
         ),
         body: _isLoading
             ? const Center(
@@ -68,74 +105,184 @@ class _RiwayatPageState extends State<RiwayatPage> {
             : TabBarView(
                 children: [
                   _buildListRiwayat(),
-                  _buildListRiwayat(filterStatus: "Proses"),
-                  _buildListRiwayat(filterStatus: "Selesai"),
+                  _buildListRiwayat(filterGroup: "Proposal"),
+                  _buildListRiwayat(filterGroup: "Proses"),
+                  _buildListRiwayat(filterGroup: "Selesai"),
                 ],
               ),
       ),
     );
   }
 
-  Widget _buildListRiwayat({String? filterStatus}) {
-    // Memfilter data dari API
-    final filteredData = filterStatus == null
-        ? _allReports
-        : _allReports.where((item) => item['status'] == filterStatus).toList();
+  Widget _buildListRiwayat({String? filterGroup}) {
+    final filteredData = _allReports.where((item) {
+      String status = item['status'] ?? "";
+      if (filterGroup == "Proposal") return status == "Proposal";
+      if (filterGroup == "Proses") {
+        return [
+          "Verifikasi",
+          "Penetapan",
+          "Pelaksanaan",
+          "Pemeriksaan",
+        ].contains(status);
+      }
+      if (filterGroup == "Selesai") return status == "Selesai";
+      return true;
+    }).toList();
 
     if (filteredData.isEmpty) {
-      return const Center(child: Text("Tidak ada laporan"));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox_rounded, size: 80, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(
+              "Belum ada data laporan",
+              style: TextStyle(color: Colors.grey[500], fontSize: 16),
+            ),
+          ],
+        ),
+      );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(10),
-      itemCount: filteredData.length,
-      itemBuilder: (context, index) {
-        final item = filteredData[index];
-        return Card(
-          elevation: 2,
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(15),
-            leading: CircleAvatar(
-              backgroundColor: item['status'] == "Selesai"
-                  ? Colors.green[100]
-                  : Colors.orange[100],
-              child: Icon(
-                item['status'] == "Selesai"
-                    ? Icons.check_circle
-                    : Icons.pending_actions,
-                color: item['status'] == "Selesai"
-                    ? Colors.green
-                    : Colors.orange,
-              ),
-            ),
-            title: Text(
-              item['judul'] ?? "Tanpa Judul",
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 5),
-                Text("Lokasi: ${item['lokasi']}"),
-                Text("Kategori: ${item['kategori']}"),
+    return RefreshIndicator(
+      onRefresh: _fetchData,
+      child: ListView.builder(
+        padding: const EdgeInsets.only(
+          top: 15,
+          left: 15,
+          right: 15,
+          bottom: 100,
+        ),
+        itemCount: filteredData.length,
+        itemBuilder: (context, index) {
+          final item = filteredData[index];
+          String status = item['status'] ?? "Proposal";
+
+          // Mapping warna status agar lebih konsisten
+          final Map<String, Color> statusColors = {
+            'Proposal': Colors.blueGrey,
+            'Verifikasi': Colors.orange,
+            'Penetapan': Colors.amber,
+            'Pelaksanaan': Colors.blue,
+            'Pemeriksaan': Colors.indigo,
+            'Selesai': Colors.green,
+          };
+
+          Color currentStatusColor = statusColors[status] ?? Colors.grey;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 15),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
               ],
             ),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailRiwayatPage(data: item),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailRiwayatPage(data: item),
+                    ),
+                  );
+                },
+                child: IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      // Indikator warna di samping kiri
+                      Container(width: 6, color: currentStatusColor),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    status.toUpperCase(),
+                                    style: TextStyle(
+                                      color: currentStatusColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                      letterSpacing: 1.1,
+                                    ),
+                                  ),
+                                  Text(
+                                    item['created_at'] != null
+                                        ? item['created_at'].toString().split(
+                                            'T',
+                                          )[0]
+                                        : "",
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                item['judul'] ?? "Tanpa Judul",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on_outlined,
+                                    size: 14,
+                                    color: Colors.grey,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      item['lokasi'] ?? "Lokasi...",
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
                 ),
-              );
-            },
-          ),
-        );
-      },
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

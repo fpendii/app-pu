@@ -3,7 +3,7 @@ import 'dart:io';
 
 class ApiService {
   // GANTI DENGAN IP LAPTOP KAMU
-  static const String baseUrl = "http://10.143.145.1:8000/api";
+  static const String baseUrl = "http://10.64.246.1:8000/api";
 
   final Dio _dio = Dio(
     BaseOptions(
@@ -69,6 +69,7 @@ class ApiService {
     required String kategori,
     required String judul,
     required String lokasi,
+    required String prioritas,
     required String deskripsi,
     required List<File> foto,
   }) async {
@@ -79,6 +80,7 @@ class ApiService {
         "kategori": kategori,
         "judul": judul,
         "lokasi": lokasi,
+        'prioritas': prioritas,
         "deskripsi": deskripsi,
       });
 

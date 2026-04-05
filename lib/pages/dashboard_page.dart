@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
-import '../services/api_service.dart'; // Pastikan path sesuai dengan file ApiService Anda
+import '../services/api_service.dart'; // Pastikan path sesuai
 
 // Halaman-halaman tujuan navigasi
 import 'form_lapor_page.dart';
@@ -39,6 +38,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
 
+  // Daftar halaman utama
   final List<Widget> _pages = [
     const MainDashboardContent(),
     const RiwayatPage(),
@@ -63,58 +63,77 @@ class _DashboardPageState extends State<DashboardPage> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: _pages[_selectedIndex],
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        shape: const CircleBorder(),
-        backgroundColor: Colors.black,
-        elevation: 4,
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const FormLaporPage()),
-          );
-        },
-        child: const Icon(
-          Icons.add_a_photo_rounded,
-          color: Color(0xFFFFD700),
-          size: 28,
+      body: IndexedStack(index: _selectedIndex, children: _pages),
+      bottomNavigationBar: BottomAppBar(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        color: Colors.white,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildTabItem(
+              icon: Icons.dashboard_rounded,
+              label: "Beranda",
+              index: 0,
+            ),
+            _buildTabItem(
+              icon: Icons.history_rounded,
+              label: "Riwayat",
+              index: 1,
+            ),
+
+            // TOMBOL LAPOR (Pusat Aksi)
+            _buildLaporButton(),
+
+            _buildTabItem(
+              icon: Icons.menu_book_rounded,
+              label: "Panduan",
+              index: 2,
+            ),
+            _buildTabItem(
+              icon: Icons.person_rounded,
+              label: "Profil",
+              index: 3,
+            ),
+          ],
         ),
       ),
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 10,
-        color: Colors.white,
-        clipBehavior: Clip.antiAlias,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildTabItem(
-                icon: Icons.dashboard_rounded,
-                label: "Beranda",
-                index: 0,
-              ),
-              _buildTabItem(
-                icon: Icons.history_rounded,
-                label: "Riwayat",
-                index: 1,
-              ),
-              const SizedBox(width: 40),
-              _buildTabItem(
-                icon: Icons.menu_book_rounded,
-                label: "Panduan",
-                index: 2,
-              ),
-              _buildTabItem(
-                icon: Icons.person_rounded,
-                label: "Profil",
-                index: 3,
-              ),
-            ],
+    );
+  }
+
+  // Widget Tombol Lapor di Tengah Bottom Bar
+  Widget _buildLaporButton() {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const FormLaporPage()),
+        );
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: const BoxDecoration(
+              color: Colors.black,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.campaign_rounded, // Ikon pengaduan yang lebih tepat
+              color: Color(0xFFFFD700),
+              size: 24,
+            ),
           ),
-        ),
+          const SizedBox(height: 4),
+          const Text(
+            "Lapor",
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -168,11 +187,15 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
   }
 
   Future<ReportStats> _fetchStats() async {
-    final response = await _apiService.getDashboardStats();
-    if (response.statusCode == 200) {
-      return ReportStats.fromJson(response.data);
-    } else {
-      throw Exception("Gagal memuat statistik");
+    try {
+      final response = await _apiService.getDashboardStats();
+      if (response.statusCode == 200) {
+        return ReportStats.fromJson(response.data);
+      } else {
+        throw Exception("Gagal memuat statistik");
+      }
+    } catch (e) {
+      throw Exception("Terjadi kesalahan koneksi");
     }
   }
 
@@ -205,7 +228,7 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
                   const Text("Selamat Datang,", style: TextStyle(fontSize: 16)),
                   const Text(
                     "Masyarakat Peduli Infrastruktur",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
 
@@ -218,7 +241,17 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
                           child: CircularProgressIndicator(color: Colors.black),
                         );
                       } else if (snapshot.hasError) {
-                        return const Text("Gagal mengambil data aduan");
+                        return Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.black12,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            "Gagal mengambil data statistik",
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        );
                       }
 
                       final data = snapshot.data!;
@@ -275,9 +308,8 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
                   _buildNewsCard(
                     "Dinas PU menghimbau warga waspada lubang jalan saat hujan.",
                   ),
-                  const SizedBox(
-                    height: 100,
-                  ), // Spasi agar FAB tidak menutupi konten
+                  // Spasi bawah ekstra agar tidak tertutup bottom bar yang melayang
+                  const SizedBox(height: 120),
                 ],
               ),
             ),
