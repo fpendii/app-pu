@@ -7,6 +7,7 @@ import 'login_page.dart';
 // import 'change_password_page.dart';
 import 'pusat_bantuan_page.dart';
 import 'panduan_page.dart';
+import 'detail_profil_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -25,6 +26,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final response = await _apiService.getUserProfile(userId);
 
     if (response.statusCode == 200) {
+      print("Data dari API: ${response.data}");
       return response.data['data'];
     } else {
       throw Exception("Gagal mengambil data profil");
@@ -141,6 +143,20 @@ class _ProfilePageState extends State<ProfilePage> {
                       //     // Navigator.push(context, MaterialPageRoute(builder: (context) => const ChangePasswordPage()));
                       //   },
                       // ),
+                      _buildMenuTile(
+                        Icons.person_outline_rounded,
+                        "Detail Akun Lengkap",
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              // Kita kirim data 'user' yang sudah didapat dari FutureBuilder
+                              builder: (context) =>
+                                  DetailProfilPage(userData: user),
+                            ),
+                          );
+                        },
+                      ),
                       _buildMenuTile(
                         Icons.help_outline_rounded,
                         "Pusat Bantuan",

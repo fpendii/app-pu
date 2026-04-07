@@ -21,7 +21,9 @@ class _LoginPageState extends State<LoginPage> {
   // 1. FUNGSI UNTUK MENAMPILKAN MODAL HUBUNGI ADMIN
   // Sekarang menerima parameter 'phone' dari API
   void _showContactAdminModal(String status, String phone) {
-    String title = status == 'menunggu' ? "Akun Belum Diverifikasi" : "Akun Ditolak";
+    String title = status == 'menunggu'
+        ? "Akun Belum Diverifikasi"
+        : "Akun Ditolak";
     String description = status == 'menunggu'
         ? "Akun Anda sedang dalam antrean verifikasi Admin. Silahkan hubungi admin untuk mempercepat proses."
         : "Mohon maaf, pengajuan akun Anda ditolak oleh Admin. Hubungi admin untuk informasi lebih lanjut.";
@@ -40,21 +42,41 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40, 
-                height: 4, 
-                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               const SizedBox(height: 25),
-              Icon(status == 'menunggu' ? Icons.timer_outlined : Icons.cancel_outlined, size: 70, color: iconColor),
+              Icon(
+                status == 'menunggu'
+                    ? Icons.timer_outlined
+                    : Icons.cancel_outlined,
+                size: 70,
+                color: iconColor,
+              ),
               const SizedBox(height: 20),
-              Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 12),
-              Text(description, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+              Text(
+                description,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey, fontSize: 14),
+              ),
               const SizedBox(height: 30),
               ElevatedButton.icon(
                 onPressed: () async {
-                  const String message = "Halo Admin, mohon verifikasi akun saya untuk aplikasi E-Lapor PU.";
-                  
+                  const String message =
+                      "Halo Admin, mohon verifikasi akun saya untuk aplikasi E-Lapor PU.";
+
                   // URI dibuat secara dinamis berdasarkan nomor dari parameter 'phone'
                   final Uri whatsappUrl = Uri(
                     scheme: 'https',
@@ -64,23 +86,37 @@ class _LoginPageState extends State<LoginPage> {
                   );
 
                   try {
-                    await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                    await launchUrl(
+                      whatsappUrl,
+                      mode: LaunchMode.externalApplication,
+                    );
                   } catch (e) {
                     _showSnackBar("Gagal membuka WhatsApp", Colors.red);
                   }
                 },
                 icon: const Icon(Icons.chat, color: Colors.white),
-                label: const Text("Hubungi Admin via WhatsApp", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                label: const Text(
+                  "Hubungi Admin via WhatsApp",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   minimumSize: const Size(double.infinity, 55),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
               TextButton(
-                onPressed: () => Navigator.pop(context), 
-                child: const Text("Tutup", style: TextStyle(color: Colors.grey))
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  "Tutup",
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
             ],
           ),
@@ -109,10 +145,12 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response.statusCode == 200) {
         final userData = response.data['data'];
-        
+
         // --- AMBIL STATUS VERIFIKASI & KONTAK ADMIN DARI API ---
-        String statusVerifikasi = userData['verifikasi']; 
-        String adminPhone = userData['admin_contact'] ?? "62838634508345"; // Fallback jika API kosong
+        String statusVerifikasi = userData['verifikasi'];
+        String adminPhone =
+            userData['admin_contact'] ??
+            "62838634508345"; // Fallback jika API kosong
 
         if (statusVerifikasi != 'acc') {
           _showContactAdminModal(statusVerifikasi, adminPhone);
@@ -138,15 +176,18 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       if (mounted) LoadingDialog.hide(context);
-      _showSnackBar("Koneksi gagal ke server. Periksa jaringan Anda!", Colors.red);
+      _showSnackBar(
+        "Koneksi gagal ke server. Periksa jaringan Anda!",
+        Colors.red,
+      );
     }
   }
 
   void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message), 
-        backgroundColor: color, 
+        content: Text(message),
+        backgroundColor: color,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
       ),
@@ -165,14 +206,22 @@ class _LoginPageState extends State<LoginPage> {
               width: double.infinity,
               decoration: const BoxDecoration(
                 color: Color(0xFFFFD700),
-                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(80)),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(80),
+                ),
               ),
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image(image: AssetImage("assets/images/logo_pu.png"), height: 100),
+                  Image(
+                    image: AssetImage("assets/images/logo_soc.png"),
+                    height: 100,
+                  ),
                   SizedBox(height: 10),
-                  Text("E-LAPOR PU", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                  Text(
+                    "E-LAPOR PU",
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
                   Text("Layanan Aspirasi & Pengaduan Online"),
                 ],
               ),
@@ -201,26 +250,40 @@ class _LoginPageState extends State<LoginPage> {
                       labelText: "Password",
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
-                        icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                        onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                        icon: Icon(
+                          _isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () => setState(
+                          () => _isPasswordVisible = !_isPasswordVisible,
+                        ),
                       ),
                       border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(onPressed: () {}, child: const Text("Lupa Password?")),
-                  ),
+                  // Align(
+                  //   alignment: Alignment.centerRight,
+                  //   child: TextButton(onPressed: () {}, child: const Text("Lupa Password?")),
+                  // ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFD700),
                       minimumSize: const Size(double.infinity, 55),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    child: const Text("MASUK", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                    child: const Text(
+                      "MASUK",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -228,8 +291,16 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       const Text("Belum punya akun?"),
                       TextButton(
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterPage())),
-                        child: const Text("Daftar Sekarang", style: TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterPage(),
+                          ),
+                        ),
+                        child: const Text(
+                          "Daftar Sekarang",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart'; // Pastikan path sesuai
+import '../services/api_service.dart';
 
-// Halaman-halaman tujuan navigasi
+// Halaman-halaman tujuan navigasi (Pastikan file ini ada)
 import 'form_lapor_page.dart';
 import 'riwayat_page.dart';
 import 'profile_page.dart';
@@ -20,10 +20,12 @@ class ReportStats {
   });
 
   factory ReportStats.fromJson(Map<String, dynamic> json) {
+    // Menyesuaikan dengan struktur response data dari Laravel
+    final data = json['data'] ?? json;
     return ReportStats(
-      total: json['total'] ?? 0,
-      proses: json['proses'] ?? 0,
-      selesai: json['selesai'] ?? 0,
+      total: data['total'] ?? 0,
+      proses: data['proses'] ?? 0,
+      selesai: data['selesai'] ?? 0,
     );
   }
 }
@@ -38,7 +40,6 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
 
-  // Daftar halaman utama
   final List<Widget> _pages = [
     const MainDashboardContent(),
     const RiwayatPage(),
@@ -63,10 +64,7 @@ class _DashboardPageState extends State<DashboardPage> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: BottomAppBar(
         padding: const EdgeInsets.symmetric(vertical: 8),
         color: Colors.white,
@@ -83,10 +81,7 @@ class _DashboardPageState extends State<DashboardPage> {
               label: "Riwayat",
               index: 1,
             ),
-            
-            // TOMBOL LAPOR (Pusat Aksi)
             _buildLaporButton(),
-
             _buildTabItem(
               icon: Icons.menu_book_rounded,
               label: "Panduan",
@@ -103,15 +98,12 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // Widget Tombol Lapor di Tengah Bottom Bar
   Widget _buildLaporButton() {
     return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const FormLaporPage()),
-        );
-      },
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const FormLaporPage()),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -122,7 +114,7 @@ class _DashboardPageState extends State<DashboardPage> {
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.campaign_rounded, // Ikon pengaduan yang lebih tepat
+              Icons.campaign_rounded,
               color: Color(0xFFFFD700),
               size: 24,
             ),
@@ -130,11 +122,7 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 4),
           const Text(
             "Lapor",
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -171,7 +159,6 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-// --- KONTEN DASHBOARD ---
 class MainDashboardContent extends StatefulWidget {
   const MainDashboardContent({super.key});
 
@@ -198,44 +185,39 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
         throw Exception("Gagal memuat statistik");
       }
     } catch (e) {
-      throw Exception("Terjadi kesalahan koneksi");
+      throw Exception("Koneksi bermasalah");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: () async {
-        setState(() {
-          _statsFuture = _fetchStats();
-        });
-      },
+      onRefresh: () async => setState(() => _statsFuture = _fetchStats()),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           children: [
-            // Banner Kuning
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 35),
+              padding: const EdgeInsets.fromLTRB(25, 20, 25, 50),
               decoration: const BoxDecoration(
                 color: Color(0xFFFFD700),
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
                 ),
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Selamat Datang,", style: TextStyle(fontSize: 16)),
                   const Text(
-                    "Masyarakat Peduli Infrastruktur",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    "Selamat Datang,",
+                    style: TextStyle(fontSize: 14, color: Colors.black54),
                   ),
-                  const SizedBox(height: 20),
-
-                  // Area Statistik
+                  const Text(
+                    "Masyarakat Peduli",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 30),
                   FutureBuilder<ReportStats>(
                     future: _statsFuture,
                     builder: (context, snapshot) {
@@ -243,30 +225,43 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
                         return const Center(
                           child: CircularProgressIndicator(color: Colors.black),
                         );
-                      } else if (snapshot.hasError) {
-                        return Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.black12,
-                            borderRadius: BorderRadius.circular(10)
-                          ),
-                          child: const Text("Gagal mengambil data statistik", style: TextStyle(fontSize: 12)),
-                        );
                       }
-
-                      final data = snapshot.data!;
+                      final data =
+                          snapshot.data ??
+                          ReportStats(total: 0, proses: 0, selesai: 0);
                       return Container(
-                        padding: const EdgeInsets.all(15),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(15),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 10,
+                              offset: Offset(0, 5),
+                            ),
+                          ],
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _StatItem(label: "Aduan", value: "${data.total}"),
-                            _StatItem(label: "Proses", value: "${data.proses}"),
-                            _StatItem(label: "Selesai", value: "${data.selesai}"),
+                            _StatBox(
+                              label: "Aduan",
+                              value: "${data.total}",
+                              color: Colors.blue,
+                            ),
+                            _verticalDivider(),
+                            _StatBox(
+                              label: "Proses",
+                              value: "${data.proses}",
+                              color: Colors.orange,
+                            ),
+                            _verticalDivider(),
+                            _StatBox(
+                              label: "Selesai",
+                              value: "${data.selesai}",
+                              color: Colors.green,
+                            ),
                           ],
                         ),
                       );
@@ -275,76 +270,33 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
                 ],
               ),
             ),
-
-            // Bagian Informasi
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.campaign_rounded, color: Colors.orange),
-                      SizedBox(width: 8),
-                      Text(
-                        "Informasi Terkini",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-                  _buildNewsCard(
-                    "Perbaikan jalan lingkar kota sedang dalam tahap pengaspalan.",
-                  ),
-                  _buildNewsCard(
-                    "Update: Laporan jembatan rusak di Desa Makmur telah diterima.",
-                  ),
-                  _buildNewsCard(
-                    "Dinas PU menghimbau warga waspada lubang jalan saat hujan.",
-                  ),
-                  // Spasi bawah ekstra agar tidak tertutup bottom bar yang melayang
-                  const SizedBox(height: 120), 
-                ],
-              ),
+            const SizedBox(height: 60),
+            Icon(Icons.touch_app_outlined, size: 60, color: Colors.grey[200]),
+            const SizedBox(height: 15),
+            const Text(
+              "Ketuk tombol hitam di bawah\nuntuk mulai melapor",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey, fontSize: 14),
             ),
+            const SizedBox(height: 120),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNewsCard(String text) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-          const SizedBox(width: 12),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
-        ],
-      ),
-    );
-  }
+  Widget _verticalDivider() =>
+      Container(height: 30, width: 1, color: Colors.grey[200]);
 }
 
-class _StatItem extends StatelessWidget {
+class _StatBox extends StatelessWidget {
   final String label, value;
-  const _StatItem({required this.label, required this.value});
+  final Color color;
+  const _StatBox({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -352,9 +304,16 @@ class _StatItem extends StatelessWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
         ),
-        Text(label, style: const TextStyle(fontSize: 12)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Colors.black54),
+        ),
       ],
     );
   }

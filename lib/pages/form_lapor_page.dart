@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import '../widgets/loading_dialog.dart';
 import '../services/api_service.dart';
+import 'pilih_lokasi_page.dart';
 
 class FormLaporPage extends StatefulWidget {
   const FormLaporPage({super.key});
@@ -71,6 +72,25 @@ class _FormLaporPageState extends State<FormLaporPage> {
     ],
     'Lainnya': [],
   };
+
+  void _bukaPeta() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PilihLokasiPage(),
+      ), // Pastikan class PilihLokasiPage sudah dibuat
+    );
+
+    if (result != null) {
+      setState(() {
+        // Mengisi controller lokasi otomatis dengan alamat dari peta
+        _lokasiController.text = result['alamat'];
+
+        // Tips: Jika API Anda butuh koordinat terpisah,
+        // Anda bisa simpan ke variabel double lat, long;
+      });
+    }
+  }
 
   // --- HELPER UI ---
   Color _getPriorityColor(String priority) {
@@ -349,10 +369,16 @@ class _FormLaporPageState extends State<FormLaporPage> {
 
             const SizedBox(height: 20),
             _buildLabel("Lokasi / Alamat"),
-            _buildTextField(
-              _lokasiController,
-              "Lokasi kejadian",
-              icon: Icons.location_on_outlined,
+            GestureDetector(
+              onTap: _bukaPeta, // Klik area ini untuk buka peta
+              child: AbsorbPointer(
+                // Agar keyboard tidak muncul saat diklik
+                child: _buildTextField(
+                  _lokasiController,
+                  "Ketuk untuk memilih lokasi dari peta...",
+                  icon: Icons.map_outlined, // Ubah icon agar lebih relevan
+                ),
+              ),
             ),
 
             const SizedBox(height: 20),

@@ -3,7 +3,7 @@ import 'dart:io';
 
 class ApiService {
   // GANTI DENGAN IP LAPTOP KAMU
-  static const String baseUrl = "http://10.64.246.1:8000/api";
+  static const String baseUrl = "http://10.139.165.1:8000/api";
 
   final Dio _dio = Dio(
     BaseOptions(
@@ -152,6 +152,30 @@ class ApiService {
     } on DioException catch (e) {
       return e.response ??
           Response(requestOptions: RequestOptions(), statusCode: 500);
+    }
+  } // Di dalam class ApiService
+
+  Future<Response> updateProfile(int userId, Map<String, dynamic> data) async {
+    try {
+      // Sesuaikan URL dengan endpoint API Laravel Anda
+      // Gunakan 'PUT' atau 'POST' sesuai dengan Route di backend
+      final response = await _dio.put(
+        '/users/$userId',
+        data: data,
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            // Jika menggunakan Bearer Token, tambahkan di sini:
+            // 'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      return response;
+    } on DioException catch (e) {
+      // Melemparkan error agar bisa ditangkap oleh try-catch di UI
+      throw Exception(
+        e.response?.data['message'] ?? "Gagal memperbarui profil",
+      );
     }
   }
 }

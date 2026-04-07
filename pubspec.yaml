@@ -45,10 +45,12 @@ dependencies:
   shared_preferences: ^2.5.4
   intl: ^0.20.2
 
+  
+
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/logo_pu.png"
+  image_path: "assets/images/logo_soc.png"
   min_sdk_android: 21 # SDK minimum untuk Android
 
 dev_dependencies:
@@ -77,6 +79,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/logo_pu.png
+    - assets/images/logo_soc.png
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
