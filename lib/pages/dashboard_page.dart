@@ -63,7 +63,10 @@ class _DashboardPageState extends State<DashboardPage> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: IndexedStack(index: _selectedIndex, children: _pages),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: BottomAppBar(
         padding: const EdgeInsets.symmetric(vertical: 8),
         color: Colors.white,
@@ -80,7 +83,7 @@ class _DashboardPageState extends State<DashboardPage> {
               label: "Riwayat",
               index: 1,
             ),
-
+            
             // TOMBOL LAPOR (Pusat Aksi)
             _buildLaporButton(),
 
@@ -245,12 +248,9 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: Colors.black12,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(10)
                           ),
-                          child: const Text(
-                            "Gagal mengambil data statistik",
-                            style: TextStyle(fontSize: 12),
-                          ),
+                          child: const Text("Gagal mengambil data statistik", style: TextStyle(fontSize: 12)),
                         );
                       }
 
@@ -266,10 +266,7 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
                           children: [
                             _StatItem(label: "Aduan", value: "${data.total}"),
                             _StatItem(label: "Proses", value: "${data.proses}"),
-                            _StatItem(
-                              label: "Selesai",
-                              value: "${data.selesai}",
-                            ),
+                            _StatItem(label: "Selesai", value: "${data.selesai}"),
                           ],
                         ),
                       );
@@ -309,7 +306,7 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
                     "Dinas PU menghimbau warga waspada lubang jalan saat hujan.",
                   ),
                   // Spasi bawah ekstra agar tidak tertutup bottom bar yang melayang
-                  const SizedBox(height: 120),
+                  const SizedBox(height: 120), 
                 ],
               ),
             ),
