@@ -3,7 +3,7 @@ import 'dart:io';
 
 class ApiService {
   // GANTI DENGAN IP LAPTOP KAMU
-  static const String baseUrl = "http://10.139.165.1:8000/api";
+  static const String baseUrl = "http://192.168.100.68:8000/api";
 
   final Dio _dio = Dio(
     BaseOptions(
