@@ -3,7 +3,7 @@ import 'dart:io';
 
 class ApiService {
   // GANTI DENGAN IP LAPTOP KAMU
-  static const String baseUrl = "http://192.168.100.68:8000/api";
+  static const String baseUrl = "http://10.98.70.1:8000/api";
 
   final Dio _dio = Dio(
     BaseOptions(
@@ -71,6 +71,7 @@ class ApiService {
     required String lokasi,
     required String deskripsi,
     required List<File> foto,
+    String? nomerPelapor,
   }) async {
     try {
       FormData formData = FormData.fromMap({
@@ -80,6 +81,7 @@ class ApiService {
         "judul": judul,
         "lokasi": lokasi,
         "deskripsi": deskripsi,
+        'nomer_pelapor': nomerPelapor,
       });
 
       // Menambahkan banyak foto ke FormData

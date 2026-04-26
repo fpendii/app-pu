@@ -157,7 +157,7 @@ class _LoginPageState extends State<LoginPage> {
           return;
         }
 
-        // JIKA SUDAH 'acc', SIMPAN SESI
+        // JIKA SUDAH 'acc', SIMPAN SESIno
         final prefs = await SharedPreferences.getInstance();
         await prefs.setInt('user_id', userData['id']);
         await prefs.setString('user_name', userData['name']);

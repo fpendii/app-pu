@@ -22,6 +22,7 @@ class _FormLaporPageState extends State<FormLaporPage> {
   final _lokasiController = TextEditingController();
   final _deskripsiController = TextEditingController();
   final _kategoriLainnyaController = TextEditingController();
+  final _noHpController = TextEditingController();
 
   String? _selectedJenisUsulan;
   // String? _selectedPrioritas;
@@ -72,6 +73,21 @@ class _FormLaporPageState extends State<FormLaporPage> {
     ],
     'Lainnya': [],
   };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  void _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    String noHp = prefs.getString('nomer_wa') ?? '';
+
+    setState(() {
+      _noHpController.text = noHp;
+    });
+  }
 
   void _bukaPeta() async {
     final result = await Navigator.push(
@@ -210,6 +226,7 @@ class _FormLaporPageState extends State<FormLaporPage> {
         lokasi: _lokasiController.text,
         deskripsi: _deskripsiController.text,
         foto: _images,
+        nomerPelapor: _noHpController.text,
       );
 
       if (!mounted) return;
@@ -329,6 +346,18 @@ class _FormLaporPageState extends State<FormLaporPage> {
             _buildLabel("Judul Laporan"),
             _buildTextField(_judulController, "Contoh: Kerusakan Bendung A"),
 
+            const SizedBox(height: 20),
+            _buildLabel("Nomor Pelapor (WhatsApp)"),
+            _buildTextField(
+              _noHpController,
+              "Contoh: 08123456789",
+              icon: Icons.phone,
+            ),
+            const SizedBox(height: 5),
+            Text(
+              "Isi jika pelapor berbeda dengan pemilik akun",
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
             const SizedBox(height: 20),
             _buildLabel("Lokasi / Alamat"),
             GestureDetector(
