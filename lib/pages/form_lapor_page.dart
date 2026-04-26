@@ -24,7 +24,7 @@ class _FormLaporPageState extends State<FormLaporPage> {
   final _kategoriLainnyaController = TextEditingController();
 
   String? _selectedJenisUsulan;
-  String? _selectedPrioritas;
+  // String? _selectedPrioritas;
   String? _selectedParent;
   String? _selectedSub;
 
@@ -37,7 +37,7 @@ class _FormLaporPageState extends State<FormLaporPage> {
     'Laporan Masyarakat',
   ];
 
-  final List<String> _prioritasData = ['Rendah', 'Sedang', 'Tinggi', 'Darurat'];
+  // final List<String> _prioritasData = ['Rendah', 'Sedang', 'Tinggi', 'Darurat'];
 
   final Map<String, List<String>> _kategoriData = {
     'Irigasi Permukaan': [
@@ -93,18 +93,18 @@ class _FormLaporPageState extends State<FormLaporPage> {
   }
 
   // --- HELPER UI ---
-  Color _getPriorityColor(String priority) {
-    switch (priority) {
-      case 'Darurat':
-        return Colors.red;
-      case 'Tinggi':
-        return Colors.orange;
-      case 'Sedang':
-        return Colors.blue;
-      default:
-        return Colors.green;
-    }
-  }
+  // Color _getPriorityColor(String priority) {
+  //   switch (priority) {
+  //     case 'Darurat':
+  //       return Colors.red;
+  //     case 'Tinggi':
+  //       return Colors.orange;
+  //     case 'Sedang':
+  //       return Colors.blue;
+  //     default:
+  //       return Colors.green;
+  //   }
+  // }
 
   // --- FUNGSI PICKER FOTO ---
   void _showPickerOptions() {
@@ -185,7 +185,6 @@ class _FormLaporPageState extends State<FormLaporPage> {
     // Validasi Semua Field
     if (_images.isEmpty ||
         _selectedJenisUsulan == null ||
-        _selectedPrioritas == null ||
         _selectedParent == null ||
         (_selectedParent != 'Lainnya' && _selectedSub == null) ||
         _judulController.text.isEmpty ||
@@ -206,7 +205,6 @@ class _FormLaporPageState extends State<FormLaporPage> {
       final response = await ApiService().createReport(
         userId: userId,
         jenisUsulan: _selectedJenisUsulan!,
-        prioritas: _selectedPrioritas!,
         kategori: finalKategori,
         judul: _judulController.text,
         lokasi: _lokasiController.text,
@@ -286,42 +284,6 @@ class _FormLaporPageState extends State<FormLaporPage> {
               icon: Icons.assignment_outlined,
               items: _jenisUsulanData,
               onChanged: (v) => setState(() => _selectedJenisUsulan = v),
-            ),
-
-            const SizedBox(height: 20),
-
-            // --- PRIORITAS ---
-            _buildLabel("Skala Prioritas"),
-            DropdownButtonFormField<String>(
-              value: _selectedPrioritas,
-              hint: const Text("Tingkat Urgensi"),
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                prefixIcon: Icon(
-                  Icons.priority_high_rounded,
-                  color: _selectedPrioritas == null
-                      ? Colors.grey
-                      : _getPriorityColor(_selectedPrioritas!),
-                ),
-              ),
-              items: _prioritasData
-                  .map(
-                    (e) => DropdownMenuItem(
-                      value: e,
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 6,
-                            backgroundColor: _getPriorityColor(e),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(e),
-                        ],
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) => setState(() => _selectedPrioritas = v),
             ),
 
             const SizedBox(height: 20),

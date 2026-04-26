@@ -69,7 +69,6 @@ class ApiService {
     required String kategori,
     required String judul,
     required String lokasi,
-    required String prioritas,
     required String deskripsi,
     required List<File> foto,
   }) async {
@@ -80,7 +79,6 @@ class ApiService {
         "kategori": kategori,
         "judul": judul,
         "lokasi": lokasi,
-        'prioritas': prioritas,
         "deskripsi": deskripsi,
       });
 
