@@ -238,14 +238,23 @@ class _FormLaporPageState extends State<FormLaporPage> {
           if (mounted) Navigator.pop(context);
         });
       } else {
-        _showSnackBar("Gagal: ${response.data['message']}", Colors.red);
+        if (response.data is Map) {
+          _showSnackBar("Gagal: ${response.data['message']}", Colors.red);
+        } else {
+          _showSnackBar("Gagal: ${response.data}", Colors.red);
+        }
       }
     } catch (e) {
-      if (mounted) {
-        LoadingDialog.hide(context);
-        _showSnackBar("Terjadi kesalahan sistem", Colors.red);
-      }
-    }
+  if (mounted) {
+    LoadingDialog.hide(context);
+    print("ERROR DETAIL: $e"); // 🔥 tampil di console
+
+    _showSnackBar(
+      "Error: $e", // 🔥 tampil ke layar
+      Colors.red,
+    );
+  }
+}
   }
 
   void _showSnackBar(String message, Color color) {
@@ -353,11 +362,7 @@ class _FormLaporPageState extends State<FormLaporPage> {
               "Contoh: 08123456789",
               icon: Icons.phone,
             ),
-            const SizedBox(height: 5),
-            Text(
-              "Isi jika pelapor berbeda dengan pemilik akun",
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
+
             const SizedBox(height: 20),
             _buildLabel("Lokasi / Alamat"),
             GestureDetector(

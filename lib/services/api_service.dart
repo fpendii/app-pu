@@ -3,7 +3,7 @@ import 'dart:io';
 
 class ApiService {
   // GANTI DENGAN IP LAPTOP KAMU
-  static const String baseUrl = "http://10.98.70.1:8000/api";
+  static const String baseUrl = "https://staging-soc.batuah.id/api";
 
   final Dio _dio = Dio(
     BaseOptions(
@@ -44,8 +44,12 @@ class ApiService {
 
       return await _dio.post("/register", data: formData);
     } on DioException catch (e) {
-      return e.response ??
-          Response(requestOptions: RequestOptions(), statusCode: 500);
+      // Jika server sempat memberikan respon (misal 400, 413, 500)
+      if (e.response != null) {
+        return e.response!;
+      }
+      // Jika tidak ada respon (Timeout/Koneksi Putus), lempar kembali errornya
+      rethrow;
     }
   }
 
@@ -71,7 +75,7 @@ class ApiService {
     required String lokasi,
     required String deskripsi,
     required List<File> foto,
-    String? nomerPelapor,
+    required String nomerPelapor,
   }) async {
     try {
       FormData formData = FormData.fromMap({
