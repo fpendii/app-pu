@@ -141,14 +141,15 @@ class ApiService {
   }
 
   // Tambahkan ini di dalam class ApiService
-  Future<Response> getDashboardStats() async {
-    try {
-      return await _dio.get("/dashboard-stats");
-    } on DioException catch (e) {
-      return e.response ??
-          Response(requestOptions: RequestOptions(), statusCode: 500);
-    }
+  Future<Response> getDashboardStats(int userId) async {
+  try {
+    // Kirim userId sebagai query parameter agar dibaca oleh $request->query('user_id') di Laravel
+    return await _dio.get("/dashboard-stats", queryParameters: {"user_id": userId});
+  } on DioException catch (e) {
+    return e.response ??
+        Response(requestOptions: RequestOptions(), statusCode: 500);
   }
+}
 
   Future<Response> getUserProfile(int userId) async {
     try {

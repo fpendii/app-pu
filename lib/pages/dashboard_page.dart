@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Pastikan sudah install package ini
 import '../services/api_service.dart';
 
-// Halaman-halaman tujuan navigasi (Pastikan file ini ada)
+// Halaman-halaman tujuan navigasi
 import 'form_lapor_page.dart';
 import 'riwayat_page.dart';
 import 'profile_page.dart';
@@ -20,12 +21,11 @@ class ReportStats {
   });
 
   factory ReportStats.fromJson(Map<String, dynamic> json) {
-    // Menyesuaikan dengan struktur response data dari Laravel
-    final data = json['data'] ?? json;
+    // Menyesuaikan dengan struktur response { "status": "success", "total": 0, ... }
     return ReportStats(
-      total: data['total'] ?? 0,
-      proses: data['proses'] ?? 0,
-      selesai: data['selesai'] ?? 0,
+      total: json['total'] ?? 0,
+      proses: json['proses'] ?? 0,
+      selesai: json['selesai'] ?? 0,
     );
   }
 }
@@ -71,27 +71,11 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildTabItem(
-              icon: Icons.dashboard_rounded,
-              label: "Beranda",
-              index: 0,
-            ),
-            _buildTabItem(
-              icon: Icons.history_rounded,
-              label: "Riwayat",
-              index: 1,
-            ),
+            _buildTabItem(icon: Icons.dashboard_rounded, label: "Beranda", index: 0),
+            _buildTabItem(icon: Icons.history_rounded, label: "Riwayat", index: 1),
             _buildLaporButton(),
-            _buildTabItem(
-              icon: Icons.menu_book_rounded,
-              label: "Panduan",
-              index: 2,
-            ),
-            _buildTabItem(
-              icon: Icons.person_rounded,
-              label: "Profil",
-              index: 3,
-            ),
+            _buildTabItem(icon: Icons.menu_book_rounded, label: "Panduan", index: 2),
+            _buildTabItem(icon: Icons.person_rounded, label: "Profil", index: 3),
           ],
         ),
       ),
@@ -103,7 +87,7 @@ class _DashboardPageState extends State<DashboardPage> {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const FormLaporPage()),
-      ),
+      ).then((_) => setState(() {})), // Refresh saat kembali dari form lapor
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -129,11 +113,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildTabItem({
-    required IconData icon,
-    required String label,
-    required int index,
-  }) {
+  Widget _buildTabItem({required IconData icon, required String label, required int index}) {
     bool isSelected = _selectedIndex == index;
     return InkWell(
       onTap: () => setState(() => _selectedIndex = index),
@@ -178,13 +158,23 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
 
   Future<ReportStats> _fetchStats() async {
     try {
-      final response = await _apiService.getDashboardStats();
+      final prefs = await SharedPreferences.getInstance();
+      // Pastikan key 'user_id' sama dengan yang Anda gunakan di Auth/Login
+      final int? userId = prefs.getInt('user_id');
+
+      if (userId == null) {
+        throw Exception("Sesi berakhir, silakan login kembali");
+      }
+
+      final response = await _apiService.getDashboardStats(userId);
+
       if (response.statusCode == 200) {
         return ReportStats.fromJson(response.data);
       } else {
         throw Exception("Gagal memuat statistik");
       }
     } catch (e) {
+      debugPrint("FETCH STATS ERROR: $e");
       throw Exception("Koneksi bermasalah");
     }
   }
@@ -192,7 +182,11 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: () async => setState(() => _statsFuture = _fetchStats()),
+      onRefresh: () async {
+        setState(() {
+          _statsFuture = _fetchStats();
+        });
+      },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
@@ -209,59 +203,39 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
               ),
               child: Column(
                 children: [
-                  const Text(
-                    "Selamat Datang,",
-                    style: TextStyle(fontSize: 14, color: Colors.black54),
-                  ),
-                  const Text(
-                    "Masyarakat Peduli",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
+                  const Text("Selamat Datang,", style: TextStyle(fontSize: 14, color: Colors.black54)),
+                  const Text("Masyarakat Peduli", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 30),
                   FutureBuilder<ReportStats>(
                     future: _statsFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(color: Colors.black),
-                        );
+                        return const Center(child: CircularProgressIndicator(color: Colors.black));
                       }
-                      final data =
-                          snapshot.data ??
-                          ReportStats(total: 0, proses: 0, selesai: 0);
+                      
+                      if (snapshot.hasError) {
+                        return Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.red, fontSize: 12));
+                      }
+
+                      final data = snapshot.data ?? ReportStats(total: 0, proses: 0, selesai: 0);
+                      
                       return Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 10,
-                              offset: Offset(0, 5),
-                            ),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 5)),
                           ],
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _StatBox(
-                              label: "Aduan",
-                              value: "${data.total}",
-                              color: Colors.blue,
-                            ),
+                            _StatBox(label: "Aduan", value: "${data.total}", color: Colors.blue),
                             _verticalDivider(),
-                            _StatBox(
-                              label: "Proses",
-                              value: "${data.proses}",
-                              color: Colors.orange,
-                            ),
+                            _StatBox(label: "Proses", value: "${data.proses}", color: Colors.orange),
                             _verticalDivider(),
-                            _StatBox(
-                              label: "Selesai",
-                              value: "${data.selesai}",
-                              color: Colors.green,
-                            ),
+                            _StatBox(label: "Selesai", value: "${data.selesai}", color: Colors.green),
                           ],
                         ),
                       );
@@ -285,35 +259,20 @@ class _MainDashboardContentState extends State<MainDashboardContent> {
     );
   }
 
-  Widget _verticalDivider() =>
-      Container(height: 30, width: 1, color: Colors.grey[200]);
+  Widget _verticalDivider() => Container(height: 30, width: 1, color: Colors.grey[200]);
 }
 
 class _StatBox extends StatelessWidget {
   final String label, value;
   final Color color;
-  const _StatBox({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  const _StatBox({required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Colors.black54),
-        ),
+        Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.black54)),
       ],
     );
   }
