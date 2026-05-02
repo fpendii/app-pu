@@ -3,7 +3,8 @@ import 'dart:io';
 
 class ApiService {
   // GANTI DENGAN IP LAPTOP KAMU
-  static const String baseUrl = "https://staging-soc.batuah.id/api";
+  static const String baseUrl = "http://10.98.70.1:8000/api";
+  
 
   final Dio _dio = Dio(
     BaseOptions(
@@ -183,4 +184,16 @@ class ApiService {
       );
     }
   }
+
+  Future<Response> forgotPassword(String email) async {
+  try {
+    final response = await _dio.post(
+      '/forgot-password', // Sesuaikan endpoint dari backend
+      data: {'email': email},
+    );
+    return response;
+  } catch (e) {
+    rethrow;
+  }
+}
 }

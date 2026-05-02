@@ -5,6 +5,7 @@ import 'register_page.dart';
 import 'dashboard_page.dart';
 import '../widgets/loading_dialog.dart';
 import '../services/api_service.dart';
+import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -219,7 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   SizedBox(height: 10),
                   Text(
-                    "E-LAPOR PU",
+                    "SOC",
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
                   Text("Layanan Aspirasi & Pengaduan Online"),
@@ -263,10 +264,21 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  // Align(
-                  //   alignment: Alignment.centerRight,
-                  //   child: TextButton(onPressed: () {}, child: const Text("Lupa Password?")),
-                  // ),
+                  Align(
+  alignment: Alignment.centerRight,
+  child: TextButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ForgotPasswordPage(),
+        ),
+      );
+    },
+    child: const Text("Lupa Password?"),
+  ),
+
+                  ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _handleLogin,
