@@ -53,7 +53,7 @@ class _DashboardPageState extends State<DashboardPage> {
       extendBody: true,
       appBar: AppBar(
         title: const Text(
-          'E-LAPOR DINAS PU',
+          'SOC - SDA on call',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,

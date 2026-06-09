@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-
+import 'dart:convert';
 class DetailRiwayatPage extends StatefulWidget {
   final Map<String, dynamic> data;
 
@@ -33,6 +33,8 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
     super.initState();
     _comments = widget.data['comments'] ?? [];
     _reportImages = widget.data['images'] ?? [];
+
+    
   }
 
   Future<void> _sendComment() async {
@@ -453,6 +455,7 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
   }
 
   Widget _buildCommentList() {
+    
     if (_comments.isEmpty) {
       return const Center(
         child: Text(
@@ -480,27 +483,44 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
               color: isAdmin ? Colors.blue.shade100 : Colors.grey.shade200,
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    c['user']?['name'] ?? "User",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isAdmin ? Colors.blue : Colors.black87,
-                    ),
-                  ),
-                  if (isAdmin)
-                    const Icon(Icons.verified, color: Colors.blue, size: 16),
-                ],
-              ),
-              const SizedBox(height: 5),
-              Text(c['pesan'] ?? "", style: const TextStyle(fontSize: 14)),
-            ],
+         child: Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          c['user']?['name'] ?? "User",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isAdmin ? Colors.blue : Colors.black87,
           ),
+        ),
+        if (isAdmin)
+          const Icon(Icons.verified, color: Colors.blue, size: 16),
+      ],
+    ),
+    const SizedBox(height: 5),
+
+    Text(c['pesan'] ?? "", style: const TextStyle(fontSize: 14)),
+
+    // 🔥 GAMBAR
+    if (c['foto_progress'] != null &&
+        c['foto_progress'].toString().isNotEmpty)
+      Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.network(
+            "${ApiService.imageBaseUrl}${c['foto_progress']}",
+            height: 150,
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
+  ],
+),
         );
       },
     );

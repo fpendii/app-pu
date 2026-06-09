@@ -149,9 +149,7 @@ class _LoginPageState extends State<LoginPage> {
 
         // --- AMBIL STATUS VERIFIKASI & KONTAK ADMIN DARI API ---
         String statusVerifikasi = userData['verifikasi'];
-        String adminPhone =
-            userData['admin_contact'] ??
-            "62838634508345"; // Fallback jika API kosong
+        String adminPhone = "6282177724040";  
 
         if (statusVerifikasi != 'acc') {
           _showContactAdminModal(statusVerifikasi, adminPhone);

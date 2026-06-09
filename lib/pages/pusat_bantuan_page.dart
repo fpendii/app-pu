@@ -1,13 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PusatBantuanPage extends StatelessWidget {
   const PusatBantuanPage({super.key});
+
+  // 🔹 Fungsi buka WhatsApp
+  Future<void> _openWhatsApp() async {
+    final url = Uri.parse("https://wa.me/6282177724040?text=Halo%20Admin,%20saya%20butuh%20bantuan");
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception("Tidak bisa membuka WhatsApp");
+    }
+  }
+
+  // 🔹 Fungsi kirim Email
+  Future<void> _sendEmail() async {
+    final url = Uri.parse("mailto: sdadpuprp@gmail.com?subject=Bantuan Aplikasi&body=Halo Admin, saya mengalami kendala...");
+    if (!await launchUrl(url)) {
+      throw Exception("Tidak bisa membuka Email");
+    }
+  }
+
+  // // 🔹 Fungsi Telepon
+  // Future<void> _makeCall() async {
+  //   final url = Uri.parse("tel:081234567890");
+  //   if (!await launchUrl(url)) {
+  //     throw Exception("Tidak bisa melakukan panggilan");
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Pusat Bantuan"),
+        backgroundColor: const Color(0xFFFFD700),
+        foregroundColor: Colors.black,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -25,34 +52,32 @@ class PusatBantuanPage extends StatelessWidget {
             ),
             const SizedBox(height: 30),
 
-            // OPSI KONTAK
+            // 🔥 WHATSAPP
             _buildContactCard(
               icon: Icons.chat_bubble_outline,
               title: "Chat via WhatsApp",
               subtitle: "Konsultasi cepat via pesan teks",
               color: Colors.green,
-              onTap: () {
-                // Nanti tambahkan fungsi buka link WA
-              },
+              onTap: _openWhatsApp,
             ),
+
+            // 🔥 EMAIL
             _buildContactCard(
               icon: Icons.email_outlined,
               title: "Kirim Email",
-              subtitle: "hubungi.pu@instansi.go.id",
+              subtitle: "sdadpuprp@gmail.com",
               color: Colors.blue,
-              onTap: () {
-                // Nanti tambahkan fungsi kirim email
-              },
+              onTap: _sendEmail,
             ),
-            _buildContactCard(
-              icon: Icons.phone_in_talk_outlined,
-              title: "Call Center",
-              subtitle: "Layanan telepon darurat 24 jam",
-              color: Colors.red,
-              onTap: () {
-                // Nanti tambahkan fungsi telepon
-              },
-            ),
+
+            // 🔥 TELEPON
+            // _buildContactCard(
+            //   icon: Icons.phone_in_talk_outlined,
+            //   title: "Call Center",
+            //   subtitle: "Layanan telepon darurat 24 jam",
+            //   color: Colors.red,
+            //   onTap: _makeCall,
+            // ),
 
             const SizedBox(height: 40),
             const Center(
@@ -76,11 +101,10 @@ class PusatBantuanPage extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Card(
-      elevation: 0,
+      elevation: 2,
       margin: const EdgeInsets.only(bottom: 15),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: Colors.grey.shade200),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

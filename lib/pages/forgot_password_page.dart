@@ -13,41 +13,33 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final TextEditingController _emailController = TextEditingController();
 
   void _handleResetPassword() async {
-    String email = _emailController.text.trim();
+  String email = _emailController.text.trim();
 
-    if (email.isEmpty) {
-      _showSnackBar("Silakan masukkan email Anda", Colors.orange);
-      return;
-    }
-
-    // Validasi format email sederhana
-    if (!email.contains('@')) {
-      _showSnackBar("Format email tidak valid", Colors.red);
-      return;
-    }
-
-    LoadingDialog.show(context);
-
-    try {
-      // MEMANGGIL API
-      final response = await ApiService().forgotPassword(email);
-
-      if (!mounted) return;
-      LoadingDialog.hide(context);
-
-      if (response.statusCode == 200) {
-        // JIKA BERHASIL
-        _showSuccessDialog(email);
-      } else {
-        // JIKA GAGAL (Email tidak terdaftar, dll)
-        String msg = response.data['message'] ?? "Terjadi kesalahan";
-        _showSnackBar(msg, Colors.red);
-      }
-    } catch (e) {
-      if (mounted) LoadingDialog.hide(context);
-      _showSnackBar("Gagal terhubung ke server", Colors.red);
-    }
+  if (email.isEmpty) {
+    _showSnackBar("Silakan masukkan email Anda", Colors.orange);
+    return;
   }
+
+  LoadingDialog.show(context);
+
+  try {
+    // Memanggil API Laravel
+    final response = await ApiService().forgotPassword(email);
+
+    if (!mounted) return;
+    LoadingDialog.hide(context);
+
+    if (response.statusCode == 200) {
+      // Munculkan dialog sukses sesuai yang kita buat sebelumnya
+      _showSuccessDialog(email); 
+    }
+  } catch (e) {
+    if (mounted) LoadingDialog.hide(context);
+    
+    // Logika menangani error 404 (email tidak ada) atau 422 (format salah)
+    _showSnackBar("Email tidak terdaftar atau terjadi kesalahan.", Colors.red);
+  }
+}
 
   // Fungsi pembantu untuk SnackBar
   void _showSnackBar(String message, Color color) {

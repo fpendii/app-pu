@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'edit_profil_page.dart';
+import 'package:elapor_pu/services/api_service.dart';
 
 class DetailProfilPage extends StatelessWidget {
   final Map<String, dynamic> userData;
@@ -197,8 +198,11 @@ class DetailProfilPage extends StatelessWidget {
           ? ClipRRect(
               borderRadius: BorderRadius.circular(15),
               child: Image.network(
-                // Sesuaikan base URL API Anda di sini
-                "https://api.anda.com/storage/ktp/$url",
+                // 1. UBAH DI SINI: Gabungkan Base URL langsung dengan path dari backend
+                "${ApiService.imageBaseUrl}$url", 
+                // Atau jika tidak pakai ApiService, tulis hardcode seperti ini:
+                // "https://api.anda.com/$url",
+                
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) =>
                     const Center(child: Text("Gagal memuat gambar KTP")),
