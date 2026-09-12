@@ -3,10 +3,8 @@ import 'dart:io';
 
 class ApiService {
   // GANTI DENGAN IP LAPTOP KAMU
-  static const String baseUrl = "https://staging-soc.batuah.id/api";
-  static const String imageBaseUrl = "https://staging-soc.batuah.id/storage/";
-  
-
+  static const String baseUrl = "https://sdaoncall.tanahlautkab.go.id/api";
+  static const String imageBaseUrl = "https://sdaoncall.tanahlautkab.go.id/storage/";
 
   final Dio _dio = Dio(
     BaseOptions(
