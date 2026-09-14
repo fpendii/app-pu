@@ -5,7 +5,7 @@ class ApiService {
   // GANTI DENGAN IP LAPTOP KAMU
   static const String baseUrl = "https://sdaoncall.tanahlautkab.go.id/api";
   static const String imageBaseUrl = "https://sdaoncall.tanahlautkab.go.id/storage/";
-
+  //ss
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: baseUrl,
